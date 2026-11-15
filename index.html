@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Путь в Backend</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column. Header with overall progress, then open stage sections (links + checklist), then plain rules and monthly check. */
+:root {
+  --bg: #F2F4F8;
+  --surface: #FFFFFF;
+  --fg: #111827;
+  --muted: #576175;
+  --line: #D9DEE8;
+  --accent: #2457D6;
+  --accent-soft: #E4EBFB;
+  --done: #1B8A5A;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1220;
+    --surface: #141B2D;
+    --fg: #E7EBF3;
+    --muted: #9BA6BB;
+    --line: #26304A;
+    --accent: #7EA3FF;
+    --accent-soft: #1C2A4F;
+    --done: #4CC38A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1220;
+  --surface: #141B2D;
+  --fg: #E7EBF3;
+  --muted: #9BA6BB;
+  --line: #26304A;
+  --accent: #7EA3FF;
+  --accent-soft: #1C2A4F;
+  --done: #4CC38A;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.wrap {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.eyebrow {
+  font: 500 0.74rem/1 var(--font-mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.lead { margin: 0; color: var(--muted); max-width: 60ch; }
+
+.progress {
+  margin-top: 22px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.progress-top { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.pct {
+  font: 500 2.3rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.pct-note { color: var(--muted); font-size: 0.95rem; }
+.bar {
+  margin-top: 14px;
+  height: 8px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar > i { display: block; height: 100%; width: 0; background: var(--done); transition: width 0.3s; }
+.note { margin: 12px 0 0; color: var(--muted); font-size: 0.88rem; max-width: 62ch; }
+
+.stage {
+  margin-top: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.stage-head {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 16px 18px 14px;
+}
+.stage-head::-webkit-details-marker { display: none; }
+.stage-head:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 12px; }
+.head-main { flex: 1 1 12rem; min-width: 0; }
+.tag {
+  font: 500 0.72rem/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.stage h2 {
+  margin: 7px 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.head-side { display: flex; align-items: center; gap: 10px; }
+.now {
+  font: 500 0.7rem/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 5px 8px;
+  border-radius: 999px;
+}
+.count {
+  font: 500 0.9rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.complete .count { color: var(--done); }
+.chev {
+  width: 9px;
+  height: 9px;
+  margin: 0 2px 3px 2px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+}
+details[open] > summary .chev { transform: rotate(-135deg); margin-bottom: 0; margin-top: 4px; }
+.mini { flex-basis: 100%; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.mini > i { display: block; height: 100%; width: 0; background: var(--done); transition: width 0.3s; }
+
+.stage-body { padding: 2px 18px 10px; }
+.desc { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.chip:hover { border-color: var(--accent); }
+.chip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ar { font-family: var(--font-mono); font-size: 0.8em; }
+
+.checks { list-style: none; margin: 6px 0 0; padding: 0; }
+.checks li { border-top: 1px solid var(--line); }
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; cursor: pointer; }
+.check input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  border: 2px solid var(--muted);
+  border-radius: 6px;
+  background: var(--surface);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+.check input:checked { background: var(--done); border-color: var(--done); }
+.check input::after {
+  content: "";
+  width: 6px;
+  height: 11px;
+  border: solid var(--surface);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+  opacity: 0;
+}
+.check input:checked::after { opacity: 1; }
+.check input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.txt { min-width: 0; overflow-wrap: anywhere; }
+.done .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--accent-soft);
+  color: var(--fg);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+
+.plain { margin-top: 30px; }
+.plain h2 {
+  margin: 0 0 10px;
+  font: 500 0.78rem/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.plain ul { margin: 0; padding-left: 1.2em; max-width: 62ch; }
+.plain li { margin-bottom: 8px; }
+.plain li::marker { color: var(--muted); }
+
+.foot {
+  margin-top: 34px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.foot p { margin: 0; flex: 1 1 16rem; max-width: 56ch; }
+.reset {
+  font: 500 0.85rem/1 var(--font-body);
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.reset:hover { border-color: var(--muted); }
+.reset:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Python backend · план на 3 месяца</div>
+    <h1>Путь в Backend</h1>
+    <p class="lead">От нуля до junior Python-разработчика. Отмечай готовые пункты, прогресс сохраняется в этом браузере.</p>
+
+    <div class="progress">
+      <div class="progress-top">
+        <span class="pct" id="pct">0%</span>
+        <span class="pct-note" id="pct-note">0 из 0 пунктов</span>
+      </div>
+      <div class="bar" role="progressbar" aria-label="Общий прогресс" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><i id="bar-fill"></i></div>
+      <p class="note">Три месяца реальны при 25–30 часах в неделю. Если из-за учёбы выходит меньше, режь объём, а не качество.</p>
+    </div>
+  </header>
+
+  <main id="stages"></main>
+
+  <section class="plain">
+    <h2>Правила на каждый день</h2>
+    <ul>
+      <li>2–3 часа кода в одно и то же время. Регулярность важнее длинных сессий раз в неделю.</li>
+      <li>Теории не больше часа, остальное практика. Пиши код сам, а не смотри, как пишут другие.</li>
+      <li>Застрял: 15 минут сам, потом поиск или ИИ. После ответа перепиши решение руками, не копируй.</li>
+      <li>Каждый день хотя бы один коммит на GitHub, даже мелкий.</li>
+      <li>Один язык, один курс, один главный проект. Не меняй их, пока не закончишь.</li>
+    </ul>
+  </section>
+
+  <section class="plain">
+    <h2>Проверка раз в месяц</h2>
+    <ul>
+      <li>Могу написать небольшую программу с нуля, без гайда.</li>
+      <li>Могу объяснить свой код вслух, строка за строкой.</li>
+      <li>Простую задачу на строки или словари решаю за 15 минут.</li>
+      <li>Если хотя бы один пункт не получается, не двигайся дальше, а повтори материал.</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    <p>Галочки хранятся только в этом браузере на этом устройстве. Если очистить данные сайта, прогресс обнулится.</p>
+    <button type="button" class="reset" id="reset">Сбросить прогресс</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STAGES = [
+    {
+      id: 'py',
+      title: 'Основы Python и Git',
+      months: 'Недели 1–4',
+      desc: 'Цель: написать небольшую программу с нуля и не открывать при этом гайд. Смотри лекцию и сразу решай задачи к ней. Git используй с первого дня.',
+      links: [
+        { label: 'CS50P, сайт курса', url: 'https://cs50.harvard.edu/python/' },
+        { label: 'CS50P на YouTube', url: 'https://www.youtube.com/playlist?list=PLhQjrBD2T3817j24-GogXmWqO5Q5vYy0V' },
+        { label: 'Python Tutor', url: 'https://pythontutor.com' },
+        { label: 'Pro Git, бесплатная книга', url: 'https://git-scm.com/book/en/v2' }
+      ],
+      items: [
+        'Установить Python и VS Code',
+        'Создать аккаунт на GitHub',
+        'Git: `git init`, `add`, `commit`, `log`',
+        'Лекция 0: функции и переменные + задачи',
+        'Лекция 1: условия (`if`/`else`) + задачи',
+        'Лекция 2: циклы + задачи',
+        'Лекция 3: исключения + задачи',
+        'Лекция 4: библиотеки + задачи',
+        'Лекция 5: unit-тесты + задачи',
+        'Лекция 6: работа с файлами + задачи',
+        'Лекция 7: регулярные выражения + задачи',
+        'Лекция 8: ООП, классы и объекты + задачи',
+        'Git: ветки, `merge` и файл `.gitignore`',
+        'Решения задач залиты на GitHub',
+        'Виртуальное окружение: `python -m venv` и `pip install`'
+      ]
+    },
+    {
+      id: 'web',
+      title: 'FastAPI и SQL',
+      months: 'Недели 5–6',
+      desc: 'Цель: понимать, как устроен запрос к API, и уметь читать и писать данные в базе.',
+      links: [
+        { label: 'FastAPI, официальный туториал', url: 'https://fastapi.tiangolo.com/tutorial/' },
+        { label: 'PostgreSQL Tutorial', url: 'https://www.postgresqltutorial.com/' }
+      ],
+      items: [
+        'HTTP: методы GET, POST, PUT, DELETE и коды 200, 201, 400, 401, 404, 500',
+        'FastAPI: первый эндпоинт и страница `/docs`',
+        'FastAPI: path- и query-параметры',
+        'Pydantic: модели запросов и ответов',
+        'SQL: `SELECT`, `WHERE`, `ORDER BY`',
+        'SQL: `JOIN` и `GROUP BY`',
+        'SQL: `INSERT`, `UPDATE`, `DELETE`',
+        'Установить PostgreSQL и подключиться к нему'
+      ]
+    },
+    {
+      id: 'proj',
+      title: 'Главный проект: Task Manager API',
+      months: 'Недели 7–9',
+      desc: 'Цель: один законченный проект на FastAPI и PostgreSQL с регистрацией и входом. Именно его ты показываешь на собеседовании.',
+      links: [
+        { label: 'FastAPI, официальный туториал', url: 'https://fastapi.tiangolo.com/tutorial/' },
+        { label: 'pytest, документация', url: 'https://docs.pytest.org' }
+      ],
+      items: [
+        'CRUD для задач: создать, прочитать, изменить, удалить',
+        'Подключить PostgreSQL через SQLAlchemy',
+        'Таблицы со связью один-ко-многим: пользователь и его задачи',
+        'Регистрация и вход: хеш пароля и JWT',
+        'Пользователь видит только свои задачи',
+        'Несколько тестов на эндпоинты с `pytest`',
+        'README: что делает проект и как его запустить',
+        'Проект залит на GitHub'
+      ]
+    },
+    {
+      id: 'job',
+      title: 'Выход на рынок',
+      months: 'Недели 10–12',
+      desc: 'Цель: рабочая ссылка на проект и первые отклики. Откликайся и на Junior Backend, и на QA и support: так быстрее получить опыт собеседований. Откликаться можно начинать уже с недели 8-9.',
+      links: [
+        { label: 'Djinni', url: 'https://djinni.co' },
+        { label: 'DOU, вакансии', url: 'https://jobs.dou.ua' },
+        { label: 'Docker, Get Started', url: 'https://docs.docker.com/get-started/' }
+      ],
+      items: [
+        'Проект выложен в интернет (Railway или Render)',
+        'Резюме на одну страницу',
+        'Профиль на Djinni',
+        '10 откликов на вакансии',
+        '20 простых задач на строки, списки и словари',
+        'Могу объяснить вслух: `list` и `dict`, REST, HTTP-методы, JSON',
+        'Пробное собеседование с другом или с ИИ',
+        'По желанию: `Dockerfile` и `docker-compose` для проекта'
+      ]
+    }
+  ];
+
+  var KEY = 'backend-path-3m-v1';
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (o && typeof o === 'object') return o;
+      }
+    } catch (e) {}
+    return {};
+  }
+  var state = load();
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function rich(text) {
+    var frag = document.createDocumentFragment();
+    text.split('`').forEach(function (part, i) {
+      if (!part) return;
+      if (i % 2 === 1) {
+        var c = document.createElement('code');
+        c.textContent = part;
+        frag.appendChild(c);
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    });
+    return frag;
+  }
+
+  var root = document.getElementById('stages');
+  var refs = [];
+
+  STAGES.forEach(function (st) {
+    var d = el('details', 'stage');
+    d.open = true;
+
+    var sum = el('summary', 'stage-head');
+    var main = el('div', 'head-main');
+    main.appendChild(el('span', 'tag', st.months));
+    main.appendChild(el('h2', null, st.title));
+    var side = el('div', 'head-side');
+    var now = el('span', 'now', 'Сейчас');
+    now.hidden = true;
+    var count = el('span', 'count', '0/0');
+    var chev = el('span', 'chev');
+    chev.setAttribute('aria-hidden', 'true');
+    side.appendChild(now);
+    side.appendChild(count);
+    side.appendChild(chev);
+    var mini = el('div', 'mini');
+    var miniFill = document.createElement('i');
+    mini.appendChild(miniFill);
+    sum.appendChild(main);
+    sum.appendChild(side);
+    sum.appendChild(mini);
+    d.appendChild(sum);
+
+    var body = el('div', 'stage-body');
+    body.appendChild(el('p', 'desc', st.desc));
+    if (st.links && st.links.length) {
+      var lk = el('div', 'links');
+      st.links.forEach(function (l) {
+        var a = el('a', 'chip');
+        a.href = l.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.appendChild(document.createTextNode(l.label));
+        var ar = el('span', 'ar', '↗');
+        ar.setAttribute('aria-hidden', 'true');
+        a.appendChild(ar);
+        lk.appendChild(a);
+      });
+      body.appendChild(lk);
+    }
+
+    var ul = el('ul', 'checks');
+    var items = [];
+    st.items.forEach(function (text, ii) {
+      var id = st.id + '-' + ii;
+      var li = document.createElement('li');
+      var lab = el('label', 'check');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.id = 'c-' + id;
+      cb.checked = !!state[id];
+      cb.addEventListener('change', function () {
+        if (cb.checked) state[id] = 1; else delete state[id];
+        save();
+        update();
+      });
+      var span = el('span', 'txt');
+      span.appendChild(rich(text));
+      lab.appendChild(cb);
+      lab.appendChild(span);
+      li.appendChild(lab);
+      ul.appendChild(li);
+      items.push({ cb: cb, li: li });
+    });
+    body.appendChild(ul);
+    d.appendChild(body);
+    root.appendChild(d);
+
+    refs.push({ el: d, now: now, count: count, fill: miniFill, items: items });
+  });
+
+  var pctEl = document.getElementById('pct');
+  var noteEl = document.getElementById('pct-note');
+  var barEl = document.getElementById('bar');
+  var barFill = document.getElementById('bar-fill');
+
+  function update() {
+    var total = 0, done = 0, currentSet = false;
+    refs.forEach(function (r) {
+      var d = 0;
+      r.items.forEach(function (it) {
+        if (it.cb.checked) d++;
+        it.li.classList.toggle('done', it.cb.checked);
+      });
+      var n = r.items.length;
+      total += n;
+      done += d;
+      r.count.textContent = d + '/' + n;
+      r.el.classList.toggle('complete', d === n);
+      var isNow = !currentSet && d < n;
+      if (isNow) currentSet = true;
+      r.now.hidden = !isNow;
+      r.fill.style.width = (n ? (d / n) * 100 : 0) + '%';
+    });
+    var pct = total ? Math.round((done / total) * 100) : 0;
+    pctEl.textContent = pct + '%';
+    noteEl.textContent = done === total && total > 0
+      ? 'Все пункты выполнены'
+      : done + ' из ' + total + ' пунктов';
+    barFill.style.width = pct + '%';
+    barEl.setAttribute('aria-valuenow', String(pct));
+  }
+  update();
+
+  var rb = document.getElementById('reset');
+  var armed = false;
+  var timer = null;
+  function disarm() {
+    armed = false;
+    rb.textContent = 'Сбросить прогресс';
+  }
+  rb.addEventListener('click', function () {
+    if (!armed) {
+      armed = true;
+      rb.textContent = 'Точно сбросить? Нажми ещё раз';
+      timer = setTimeout(disarm, 4000);
+      return;
+    }
+    clearTimeout(timer);
+    state = {};
+    save();
+    refs.forEach(function (r) {
+      r.items.forEach(function (it) { it.cb.checked = false; });
+    });
+    update();
+    disarm();
+  });
+})();
+</script>
+</html>
